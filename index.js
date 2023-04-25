@@ -1,11 +1,11 @@
-const express = require('express')
-const app = express()
-const cors = require('cors')
+const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
-require('dotenv').config()
+require('dotenv').config();
 
+const app = express();
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const userSchema = new mongoose.Schema({
@@ -33,7 +33,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static('public'));
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
+  res.sendFile(__dirname + '/views/index.html');
 });
 
 // Add user
@@ -67,7 +67,7 @@ app.route('/api/users').post(async (req, res) => {
     res.json(users);
   }
   catch(error) { 
-    console.error(error)
+    console.error(error);
     res.json({error: error.toString()}); 
   }
 });
@@ -100,17 +100,17 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       nlog.save();
       // Show saved data to user
       res.json({
+        _id: id,
         username: user.username,
-        description: ex.description,
+        date: (new Date(ex.date)).toDateString(),
         duration: ex.duration,
-        date: ex.date,
-        _id: id
+        description: ex.description,
       });
     }
     else res.json({error: 'User id not found!'});
   }
   catch(error) { 
-    console.error(error)
+    console.error(error);
     res.json({error: error.toString()}); 
   }
 });
@@ -125,13 +125,13 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       const from = req.query.from || (new Date(0)).toDateString();
       const to = req.query.to || (new Date()).toDateString();
       const logs = await Log.find({user_id: id, date: { $gte: from, $lte: to }}).select('data').limit(limit);
-      const logsData = logs.map(x => x.data);
+      const logsData = logs.map(x => ({description: x.data.description, duration: x.data.duration, date: (new Date(x.data.date)).toDateString()}));
 
       if (logs && user) {
         res.json({
+          _id: id,
           username: user.username, 
           count: logs.length, 
-          _id: id,
           log: [...logsData]
         });
       }
@@ -140,11 +140,11 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     else res.json({error: 'Must provide a user id!'});
   }
   catch(error) { 
-    console.error(error)
+    console.error(error);
     res.json({error: error.toString()}); 
   }
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log('Your app is listening on port ' + listener.address().port)
+  console.log('Your app is listening on port ' + listener.address().port);
 })
